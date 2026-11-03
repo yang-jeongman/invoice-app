@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1f4e79"><link rel="icon" href="icon-192.png"><title>거래명세서</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:16px/1.3 "Malgun Gothic",sans-serif;background:#f2f4f7;color:#222}
+header{background:#1f4e79;color:#fff;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0 8px 0 0}
+button,select,input{font:inherit}
+button{padding:10px 14px;border:0;border-radius:8px;background:#fff;color:#1f4e79;font-weight:700}
+button.p{background:#ffc000;color:#222}button.d{background:#c0392b;color:#fff}
+header select{padding:9px;border-radius:8px;min-width:140px}
+main{max-width:900px;margin:0 auto;padding:12px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1;background:#dde5ee}.tabs button.on{background:#1f4e79;color:#fff}
+.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 1px 3px #0002}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{font-size:14px;color:#555}
+input,select{border:1px solid #bbb;border-radius:6px;padding:8px;background:#fffbe6}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #888;padding:3px;text-align:center}
+th{background:#e7eef7}td input,td select{width:100%;border:0;background:#fffbe6;padding:8px 2px;text-align:center}
+td.no{width:34px;background:#f5f5f5}td.q input{width:46px}
+.prices td,.prices th{padding:6px}.prices input{width:100px;text-align:right}
+.stmt{background:#fff;padding:24px;max-width:520px;margin:auto}
+.stmt h2{text-align:center;margin:0 0 16px}.stmt td.r,.stmt th.r{text-align:right;padding:8px 10px}.stmt td,.stmt th{padding:8px}
+.hide{display:none}
+#print{display:none}
+@media print{header,.tabs,.noprint,#app{display:none!important}#print{display:block}body{background:#fff}
+ @page{size:A4;margin:12mm}}
+#print table{font-size:13px}#print .stmt{max-width:none;padding:0}
+</style></head><body>
+<header><h1>거래명세서</h1>
+<select id="sel"></select>
+<button id="add">+ 거래처</button><button id="ren">이름변경</button><button class="d" id="del">삭제</button>
+<span style="flex:1"></span><button class="p" id="prt">🖨 출력</button></header>
+<main id="app">
+<div class="tabs"><button id="t1" class="on">입력</button><button id="t2">거래명세표</button></div>
+<div id="v1">
+ <div class="card row"><label>거래일자 <input type="date" id="date"></label>
+ <button id="addrow">+ 행 추가</button><button id="clr" class="d">입력 초기화</button></div>
+ <div class="card"><table class="prices"><tr><th></th><th>상의</th><th>조끼</th><th>하의</th></tr>
+ <tr><th>단가</th><td><input data-p="top0" inputmode="numeric"></td><td><input data-p="vest0" inputmode="numeric"></td><td><input data-p="bot0" inputmode="numeric"></td></tr>
+ <tr><th>가봉 단가</th><td><input data-p="top1" inputmode="numeric"></td><td><input data-p="vest1" inputmode="numeric"></td><td><input data-p="bot1" inputmode="numeric"></td></tr></table></div>
+ <div class="card"><table id="grid"></table></div>
+ <div class="card"><table id="sum"></table></div>
+</div>
+<div id="v2" class="hide"><div class="stmt card" id="stmt"></div></div>
+<div class="card" style="font-size:13px;color:#555">
+ <button id="exp">백업 저장(파일)</button> <button id="imp">백업 불러오기</button> <input type="file" id="file" class="hide" accept=".json">
+ &nbsp;자동 저장됩니다. 가끔 백업 저장을 눌러 파일로 보관하세요.</div>
+</main>
+<div id="print"></div>
+<script>
+const SEED={"name": "거래처1", "rows": [{"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}, {"n": "", "a": "", "aq": "", "b": "", "bq": "", "c": "", "cq": ""}], "p": {"top": [105000, 10000], "vest": [50000, 5000], "bot": [50000, 5000]}};
+const KEY='gml_invoice_v1';
+const CODES=['','가','직','가가'];
+const EMPTY=()=>({n:'',a:'',aq:'',b:'',bq:'',c:'',cq:''});
+let db=JSON.parse(localStorage.getItem(KEY)||'null');
+function blank(){return{date:new Date().toISOString().slice(0,10),p:{top0:105000,top1:10000,vest0:50000,vest1:5000,bot0:50000,bot1:5000},rows:Array.from({length:60},EMPTY)}}
+if(!db){const s=blank();s.rows=SEED.rows.map(r=>({...r}));const q=SEED.p;s.p={top0:q.top[0],top1:q.top[1],vest0:q.vest[0],vest1:q.vest[1],bot0:q.bot[0],bot1:q.bot[1]};
+ db={cur:SEED.name,cust:{[SEED.name]:s}};}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+const $=id=>document.getElementById(id),cur=()=>db.cust[db.cur];
+const fmt=n=>(n||0).toLocaleString('ko-KR');
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function sums(c){const r={};for(const k of['a','b','c']){const q=k+'q';r[k]={tot:0,g:0,j:0,gg:0,blank:0};
+ for(const x of c.rows){r[k].tot+=+x[q]||0;if(x[k]=='가')r[k].g++;else if(x[k]=='직')r[k].j++;else if(x[k]=='가가')r[k].gg++;else r[k].blank++}}return r}
+function stmtHTML(){const c=cur(),s=sums(c),p=c.p;
+ const L=[['상의',s.a.tot,p.top0],['바지',s.c.tot,p.bot0],['조끼',s.b.tot,p.vest0],['상의가봉',s.a.g,p.top1],['바지가봉',s.c.g,p.bot1],['조끼가봉',s.b.g,p.vest1]];
+ let t=0,h=`<h2>${esc(db.cur)} 거래명세표</h2><table><tr><th>품목</th><th>수량</th><th>단가</th><th>공급가액</th></tr>`;
+ for(const[n,q,u]of L){const a=q*(+u||0);t+=a;h+=`<tr><td>${n}</td><td class=r>${fmt(q)}</td><td class=r>${fmt(+u)}</td><td class=r>${fmt(a)}</td></tr>`}
+ h+=`<tr><th colspan=3>합계</th><th class=r>${fmt(t)}</th></tr></table>
+ <p>거래일자: ${c.date||''}</p><p style="margin-top:30px">인수자: ____________ (서명)</p>`;return h}
+function selHTML(v,k,i){return `<select data-i=${i} data-k=${k}>${CODES.map(x=>`<option${x==v?' selected':''}>${x}</option>`).join('')}</select>`}
+function renderGrid(){const c=cur();let h='<tr><th>#</th><th>이름</th><th colspan=2>상의</th><th colspan=2>조끼</th><th colspan=2>하의</th></tr>';
+ c.rows.forEach((r,i)=>{h+=`<tr><td class=no>${i+1}</td><td><input data-i=${i} data-k=n value="${esc(r.n)}"></td>`+
+ ['a','b','c'].map(k=>`<td>${selHTML(r[k],k,i)}</td><td class=q><input data-i=${i} data-k=${k}q type=number inputmode=numeric min=0 value="${r[k+'q']}"></td>`).join('')+'</tr>'});
+ $('grid').innerHTML=h}
+function renderSum(){const s=sums(cur());const rows=[['전체 개수','tot'],['가봉(가) 개수','g'],['직 개수','j'],['가가 개수','gg'],['공란 개수','blank']];
+ $('sum').innerHTML='<tr><th></th><th>상의</th><th>조끼</th><th>하의</th></tr>'+rows.map(([n,k])=>`<tr><th>${n}</th><td>${s.a[k]}</td><td>${s.b[k]}</td><td>${s.c[k]}</td></tr>`).join('');
+ $('stmt').innerHTML=stmtHTML()}
+function renderAll(){$('sel').innerHTML=Object.keys(db.cust).map(n=>`<option${n==db.cur?' selected':''}>${esc(n)}</option>`).join('');
+ const c=cur();$('date').value=c.date;document.querySelectorAll('[data-p]').forEach(e=>e.value=c.p[e.dataset.p]);renderGrid();renderSum()}
+$('grid').addEventListener('input',e=>{const t=e.target,r=cur().rows[t.dataset.i];if(!r)return;const k=t.dataset.k;r[k]=t.value;
+ if(t.tagName=='SELECT'&&t.value&&!r[k+'q']){r[k+'q']=1;t.closest('tr').querySelector(`[data-k=${k}q]`).value=1}
+ save();renderSum()});
+document.querySelectorAll('[data-p]').forEach(e=>e.oninput=()=>{cur().p[e.dataset.p]=+e.value||0;save();renderSum()});
+$('date').oninput=e=>{cur().date=e.target.value;save();renderSum()};
+$('sel').onchange=e=>{db.cur=e.target.value;save();renderAll()};
+$('add').onclick=()=>{const n=(prompt('새 거래처 이름')||'').trim();if(!n)return;if(db.cust[n])return alert('이미 있는 이름입니다');
+ const b=blank();b.p={...cur().p};db.cust[n]=b;db.cur=n;save();renderAll()};
+$('ren').onclick=()=>{const n=(prompt('새 이름',db.cur)||'').trim();if(!n||n==db.cur)return;if(db.cust[n])return alert('이미 있는 이름입니다');
+ const o={};for(const k in db.cust)o[k==db.cur?n:k]=db.cust[k];db.cust=o;db.cur=n;save();renderAll()};
+$('del').onclick=()=>{if(Object.keys(db.cust).length<2)return alert('마지막 거래처는 삭제할 수 없습니다');
+ if(!confirm(db.cur+' 거래처를 삭제할까요? 되돌릴 수 없습니다'))return;delete db.cust[db.cur];db.cur=Object.keys(db.cust)[0];save();renderAll()};
+$('addrow').onclick=()=>{cur().rows.push(EMPTY());save();renderAll()};
+$('clr').onclick=()=>{if(!confirm('입력한 이름/수량을 모두 지울까요?'))return;cur().rows=blank().rows;save();renderAll()};
+function tab(n){$('v1').classList.toggle('hide',n!=1);$('v2').classList.toggle('hide',n!=2);$('t1').classList.toggle('on',n==1);$('t2').classList.toggle('on',n==2)}
+$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
+$('prt').onclick=()=>{const c=cur();
+ if(!$('v2').classList.contains('hide')){$('print').innerHTML=`<div class=stmt>${stmtHTML()}</div>`}
+ else{const s=sums(c);
+  $('print').innerHTML=`<h2 style="text-align:center">${esc(db.cur)} ${c.date}</h2><table><tr><th>#</th><th>이름</th><th>상의</th><th>수량</th><th>조끼</th><th>수량</th><th>하의</th><th>수량</th></tr>`+
+  c.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.n)}</td><td>${r.a}</td><td>${r.aq}</td><td>${r.b}</td><td>${r.bq}</td><td>${r.c}</td><td>${r.cq}</td></tr>`).join('')+
+  `</table><p>합계: 상의 ${s.a.tot} / 조끼 ${s.b.tot} / 하의 ${s.c.tot}</p>`}
+ window.print()};
+$('exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));
+ a.download='거래명세서_백업_'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+$('imp').onclick=()=>$('file').click();
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);
+ if(!d.cust||!d.cur)throw 0;if(!confirm('현재 데이터를 백업 파일 내용으로 바꿉니다. 계속할까요?'))return;db=d;save();renderAll()}catch{alert('올바른 백업 파일이 아닙니다')}};r.readAsText(f)};
+renderAll();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
