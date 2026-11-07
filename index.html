@@ -46,6 +46,8 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:5p
 .dl th,.dl td{padding:3px 4px;font-size:12px}
 .two{display:flex;gap:8px;min-width:700px;margin-bottom:6px}.two>table{flex:1;table-layout:fixed}
 .stm .dl2 th,.stm .dl2 td{padding:1px 2px;font-size:11px;height:22px;overflow:hidden;white-space:nowrap}.stm .dl2 td.nm{text-align:left}
+.pdfm .stm{padding:0;max-width:none;margin:0}.pdfm .stm .dl2 td,.pdfm .stm .dl2 th{height:6.1mm}.pdfm .two{min-width:0}.pdfm .stm .dl1 td,.pdfm .stm .dl1 th{height:6.1mm}
+.stm .dl1{table-layout:fixed;margin-bottom:6px}.stm .dl1 th,.stm .dl1 td{padding:1px 3px;font-size:12px;height:22px;overflow:hidden;white-space:nowrap}.stm .dl1 td.nm{text-align:left}.stm .dl1 td.bg{text-align:left;font-size:11px;white-space:normal;line-height:1.15}.stm .dl1 thead{display:table-header-group}.stm .dl1 tr{break-inside:avoid}
 .stm .notes{font-size:11px;color:#444;margin:2px 0 8px}.stm .keep{break-inside:avoid}
 .sumt td,.sumt th{padding:4px}
 .stm{background:#fff;padding:16px;max-width:760px;margin:auto}
@@ -59,10 +61,10 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:5p
 .modal .box{background:#fff;border-radius:12px;padding:16px;width:100%;max-width:420px;display:grid;gap:10px}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:20px;z-index:60;font-size:14px}
 .muted{color:#667;font-size:13px}.warn{color:#b3261e}
-@media print{body{padding:0;background:#fff}header,nav,main,.fab,.modal,.toast{display:none!important}#print{display:block}@page{size:A4;margin:10mm}.stm .dl2 td,.stm .dl2 th{height:6.1mm}.two{min-width:0}.stm{padding:0;max-width:none}}
+@media print{body{padding:0;background:#fff}header,nav,main,.fab,.modal,.toast{display:none!important}#print{display:block}@page{size:A4;margin:10mm}.stm .dl2 td,.stm .dl2 th,.stm .dl1 td,.stm .dl1 th{height:6.1mm}.two{min-width:0}.stm{padding:0;max-width:none}}
 #print table{font-size:13px}
 </style></head><body>
-<header><h1>거래명세서 <small style="font-size:11px;font-weight:400">v2026.11.06-c</small></h1><span id="st"></span><button id="syncbtn" title="동기화">⟳ 동기화</button></header>
+<header><h1>거래명세서 <small style="font-size:11px;font-weight:400">v2026.11.07-b</small></h1><span id="st"></span><button id="syncbtn" title="동기화">⟳ 동기화</button></header>
 <main id="main"></main>
 <nav id="nav">
 <button data-nav="ledger"><i>📥</i>접수대장</button><button data-nav="stmtlist"><i>📋</i>업체별 명세표</button><button data-nav="sales"><i>💰</i>매출·입금</button><button data-nav="settings"><i>⚙</i>설정</button></nav>
@@ -235,7 +237,8 @@ function refreshStmt(){const s=getSt(S.cid,S.ym),b=$('#stsum');if(b)b.innerHTML=
 
 /* ================= 화면 3: 거래명세서 ================= */
 const shipDate=r=>(r.s&&r.s.date)||r.date;
-function invHTML(cid,y){const c=E.get(cid)||{name:'(삭제된 업체)'},b=getBiz(),s=getSt(cid,y),k=stCalc(s),pb=prevDue(cid,y);
+const invLay=()=>(E.get('settings')||{}).lay==='one'?'one':'two';
+function invHTML(cid,y){const c=E.get(cid)||{name:'(삭제된 업체)'},b=getBiz(),s=getSt(cid,y),k=stCalc(s),pb=prevDue(cid,y),one=invLay()==='one';
  const tr=(h,v)=>`<tr><th>${h}</th><td>${esc(v||'')}</td></tr>`;
  const cell=(r,x)=>{const q=qn(r.s.q,x);return q?(r.s.m[x]==='가'?'<span class="mk">가</span>':'')+q:''};
  const note=r=>[r.org?'이월('+(+r.org.slice(5))+'월 접수)':'',diffNote(r),r.memo].filter(Boolean).join(', ');
@@ -246,8 +249,9 @@ function invHTML(cid,y){const c=E.get(cid)||{name:'(삭제된 업체)'},b=getBiz
    h+=r?`<tr><td>${+shipDate(r).slice(5,7)}</td><td>${+shipDate(r).slice(8)}</td><td>${start+i+1}</td><td>${esc(r.no)}</td><td class="nm">${esc(r.cust)}${note(r)?'<sup>*</sup>':''}</td><td>${cell(r,'a')}</td><td>${cell(r,'b')}</td><td>${cell(r,'c')}</td></tr>`:'<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'}
   return h+'</table>'};
  let pages='';const np=Math.max(1,Math.ceil(rows.length/50));
- for(let p=0;p<np;p++)pages+=`<div class="two"${p?' style="page-break-before:always"':''}>${blk(rows.slice(p*50,p*50+25),p*50)}${blk(rows.slice(p*50+25,p*50+50),p*50+25)}</div>`;
- const notes=rows.map((r,i)=>note(r)?`${i+1}번 ${esc(r.cust)}: ${esc(note(r))}`:'').filter(Boolean);
+ if(one)pages=`<table class="dl dl1"><colgroup><col style="width:6%"><col style="width:6%"><col style="width:7%"><col style="width:14%"><col style="width:19%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:21%"></colgroup><thead><tr><th>월</th><th>일</th><th>No</th><th>관리번호</th><th>고객명</th><th>상</th><th>중</th><th>하</th><th>비고</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${+shipDate(r).slice(5,7)}</td><td>${+shipDate(r).slice(8)}</td><td>${i+1}</td><td>${esc(r.no)}</td><td class="nm">${esc(r.cust)}</td><td>${cell(r,'a')}</td><td>${cell(r,'b')}</td><td>${cell(r,'c')}</td><td class="bg">${esc(note(r))}</td></tr>`).join('')||'<tr><td colspan="9">출고 내역 없음</td></tr>'}</tbody></table>`;
+ else for(let p=0;p<np;p++)pages+=`<div class="two"${p?' style="page-break-before:always"':''}>${blk(rows.slice(p*50,p*50+25),p*50)}${blk(rows.slice(p*50+25,p*50+50),p*50+25)}</div>`;
+ const notes=one?[]:rows.map((r,i)=>note(r)?`${i+1}번 ${esc(r.cust)}: ${esc(note(r))}`:'').filter(Boolean);
  return `<div class="stm"><h2>거래명세표</h2><div class="meta"><span>${ymLabel(y)} 작업분 (월/일은 출고일)</span><span>작성일 ${today()}</span></div>
  <div class="parties"><table>${tr('공급자',b.name)}${tr('사업자번호',b.bizno)}${tr('대표',b.rep)}${tr('연락처',b.tel)}${tr('주소',b.addr)}</table>
  <table>${tr('공급받는자',c.name+' 귀하')}${tr('사업자번호',c.bizno)}${tr('대표/담당',c.rep)}${tr('연락처',c.phone)}${tr('주소',c.addr)}</table></div>
@@ -262,12 +266,70 @@ function invHTML(cid,y){const c=E.get(cid)||{name:'(삭제된 업체)'},b=getBiz
  ${(pb||k.paid)?`<tr><th colspan="3">입금하실 금액(미수잔액)</th><td class="r"><b>${fmt(pb+k.due)}</b></td></tr>`:''}</table>
  ${s.memo?`<p style="margin:8px 0">비고: ${esc(s.memo)}</p>`:''}${b.bank?`<p style="margin:10px 0;font-size:15px"><b>입금계좌: ${esc(b.bank)}</b></p>`:''}${b.note?`<p class="muted">${esc(b.note)}</p>`:''}
  <p style="margin-top:22px">인수자: ______________ (서명)</p></div></div>`}
+/* ---- PDF 파일 만들기 (서버/라이브러리 없이: 명세서를 A4 이미지로 그려 PDF에 넣음) ---- */
+function pdfFrom(pages,W,H){
+ const enc=new TextEncoder(),parts=[],off=[];let len=0;
+ const add=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);len+=b.length};
+ const n=pages.length,pw=595.28,ph=841.89;
+ add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+ off[1]=len;add('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+ off[2]=len;add(`2 0 obj\n<< /Type /Pages /Kids [${pages.map((_,i)=>(3+3*i)+' 0 R').join(' ')}] /Count ${n} >>\nendobj\n`);
+ pages.forEach((d,i)=>{const a=3+3*i,c=a+1,im=a+2,cs=`q ${pw} 0 0 ${ph} 0 0 cm /Im0 Do Q`;
+  off[a]=len;add(`${a} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${c} 0 R >>\nendobj\n`);
+  off[c]=len;add(`${c} 0 obj\n<< /Length ${cs.length} >>\nstream\n${cs}\nendstream\nendobj\n`);
+  off[im]=len;add(`${im} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${d.length} >>\nstream\n`);add(d);add('\nendstream\nendobj\n')});
+ const N=3+3*n,xo=len;let x=`xref\n0 ${N}\n0000000000 65535 f \n`;for(let i=1;i<N;i++)x+=String(off[i]).padStart(10,'0')+' 00000 n \n';
+ add(x+`trailer\n<< /Size ${N} /Root 1 0 R >>\nstartxref\n${xo}\n%%EOF`);
+ return new Blob(parts,{type:'application/pdf'})}
+async function invPDF(cid,y){
+ const SC=2.5,W=794,H=1123,MAXH=1040;
+ const box=document.createElement('div');box.className='pdfm';box.style.cssText='position:fixed;left:-10000px;top:0;width:718px;font:16px/1.35 "Malgun Gothic","Noto Sans KR",sans-serif;color:#222;background:#fff';
+ box.innerHTML=invHTML(cid,y);document.body.appendChild(box);
+ const pages=[];
+ try{
+  const mh=el=>{const cs=getComputedStyle(el);return el.getBoundingClientRect().height+(parseFloat(cs.marginTop)||0)+(parseFloat(cs.marginBottom)||0)};
+  let cur=[],h=0;
+  [...box.firstElementChild.children].forEach(u=>{
+   if(u.classList.contains('dl1')){const rs=[...u.tBodies[0].rows],hh=u.tHead.getBoundingClientRect().height,rh=i=>rs[i].getBoundingClientRect().height;
+    const mk=(a,b)=>{const c=u.cloneNode(true);[...c.tBodies[0].rows].forEach((r,i)=>{if(i<a||i>=b)r.remove()});return c};
+    let a=0;
+    while(a<rs.length){let b=a,s=hh;
+     while(b<rs.length&&s+rh(b)<=MAXH-h){s+=rh(b);b++}
+     if(b===a){if(cur.length){pages.push(cur);cur=[];h=0;continue}b=a+1;s=hh+rh(a)}
+     cur.push(mk(a,b));h+=s;a=b;
+     if(a<rs.length){pages.push(cur);cur=[];h=0}}
+    return}
+   const uh=mh(u),brk=u.style.pageBreakBefore==='always';
+   if(cur.length&&(brk||h+uh>MAXH)){pages.push(cur);cur=[];h=0}cur.push(u.cloneNode(true));h+=uh});
+  pages.push(cur)}finally{box.remove()}
+ const css=[...document.styleSheets].map(s=>{try{return[...s.cssRules].filter(r=>r.type===1).map(r=>r.cssText).join('\n')}catch(e){return''}}).join('\n');
+ const jpgs=[];
+ for(let i=0;i<pages.length;i++){
+  const wrap=document.createElement('div');wrap.className='pdfm';
+  wrap.setAttribute('style',`position:relative;width:${W}px;height:${H}px;padding:38px;box-sizing:border-box;overflow:hidden;font:16px/1.35 "Malgun Gothic","Noto Sans KR",sans-serif;color:#222;background:#fff`);
+  const st=document.createElement('style');st.textContent=css;wrap.appendChild(st);
+  const d=document.createElement('div');d.className='stm';pages[i].forEach(u=>d.appendChild(u));wrap.appendChild(d);
+  if(pages.length>1){const f=document.createElement('div');f.setAttribute('style','position:absolute;right:38px;bottom:14px;font-size:11px;color:#666');f.textContent=(i+1)+' / '+pages.length;wrap.appendChild(f)}
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject x="0" y="0" width="${W}" height="${H}">${new XMLSerializer().serializeToString(wrap)}</foreignObject></svg>`;
+  const img=new Image();img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  await new Promise((ok,no)=>{img.onload=ok;img.onerror=()=>no(new Error('명세서 이미지를 만들지 못했습니다'))});
+  const cv=document.createElement('canvas');cv.width=Math.round(W*SC);cv.height=Math.round(H*SC);
+  const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(img,0,0,cv.width,cv.height);
+  const bl=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.92));if(!bl)throw new Error('이미지 변환 실패');
+  jpgs.push(new Uint8Array(await bl.arrayBuffer()))}
+ return pdfFrom(jpgs,Math.round(W*SC),Math.round(H*SC))}
+async function invPdfAct(share){await flush();const name=`거래명세서_${cname(S.cid)}_${S.ym}.pdf`;toast('PDF를 만드는 중입니다...');
+ let blob;try{blob=await invPDF(S.cid,S.ym)}catch(e){return alert('PDF를 만들지 못했습니다: '+e.message+'\n"출력" 버튼의 인쇄 화면에서 "PDF로 저장"을 선택해도 됩니다.')}
+ if(share){const f=new File([blob],name,{type:'application/pdf'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return}catch(e){if(e&&e.name==='AbortError')return}}
+  toast('이 기기에서는 바로 전송이 안 되어 파일로 저장합니다. 저장된 PDF를 카톡 등으로 보내세요')}
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),20000)}
 function refreshInv(){const b=$('#invdoc');if(b)b.innerHTML=invHTML(S.cid,S.ym)}
 VIEWS.invoice=function(){const c=E.get(S.cid);if(!c||c.deleted){S.view='stmtlist';return VIEWS.stmtlist()}
  const s=getSt(S.cid,S.ym),k=stCalc(s),cl=!!s.closed,dis=cl?' disabled':'',pb=prevDue(S.cid,S.ym);
  return `<div class="bar"><button class="ghost" data-act="invback">← 업체별 명세표</button><b>${esc(c.name)} ${ymLabel(S.ym)} 거래명세서</b> ${cl?'<span class="chip b">마감</span>':'<span class="chip w">마감 전(임시)</span>'}</div>
- <div class="card row"><button class="p" data-act="print">출력</button><button data-act="share">공유(문자/카톡)</button><button data-act="csvinv">엑셀(CSV) 저장</button><button data-act="sent">${s.sent?'발송 취소 ('+esc(s.sent)+')':'발송 처리'}</button>${cl?'<button class="d" data-act="reopen">마감 취소</button>':'<button class="p" data-act="close">월 마감</button>'}</div>
- <div class="card"><div class="grid2"><label>부가세<select data-sf="vat"${dis}><option value="none"${vatOf(s)!=='excl'?' selected':''}>없음(면세/포함)</option><option value="excl"${vatOf(s)==='excl'?' selected':''}>별도 10%</option></select></label><label>비고(명세서에 인쇄)<input data-sf="memo" value="${esc(s.memo)}"></label></div>
+ <div class="card row"><button class="p" data-act="print">출력</button><button class="p" data-act="pdfshare">PDF 저장 후 전송</button><button data-act="pdf">PDF 저장</button><button data-act="share">문자/카톡 요약 보내기</button><button data-act="csvinv">엑셀(CSV) 저장</button><button data-act="sent">${s.sent?'발송 취소 ('+esc(s.sent)+')':'발송 처리'}</button>${cl?'<button class="d" data-act="reopen">마감 취소</button>':'<button class="p" data-act="close">월 마감</button>'}</div>
+ <div class="card"><div class="grid2"><label>부가세<select data-sf="vat"${dis}><option value="none"${vatOf(s)!=='excl'?' selected':''}>없음(면세/포함)</option><option value="excl"${vatOf(s)==='excl'?' selected':''}>별도 10%</option></select></label><label>비고(명세서에 인쇄)<input data-sf="memo" value="${esc(s.memo)}"></label><label>명세표 양식<select data-lay="1"><option value="two"${invLay()==='two'?' selected':''}>좌우 두 블록(A4 세로)</option><option value="one"${invLay()==='one'?' selected':''}>한 줄로 길게(A4 세로, 비고 칸 포함)</option></select></label></div>
  <div style="margin-top:8px"><b>기타 항목</b> <span class="muted">(수선비, 배송비, 할인 등 / 할인은 단가를 -로)</span>
  ${(s.extra||[]).map((x,i)=>`<div class="row" style="margin-top:6px"><input style="flex:2;min-width:90px" data-x="${i}:n" value="${esc(x.n)}" placeholder="항목명"${dis}><input style="flex:1;min-width:60px" type="number" inputmode="numeric" data-x="${i}:q" value="${x.q}" placeholder="수량"${dis}><input style="flex:1.3;min-width:80px" type="number" inputmode="numeric" data-x="${i}:u" value="${x.u}" placeholder="단가"${dis}><button class="d" data-act="delextra" data-i="${i}"${dis}>삭제</button></div>`).join('')}
  <div style="margin-top:8px"><button data-act="addextra"${dis}>+ 기타 항목 추가</button></div></div></div>
@@ -357,6 +419,7 @@ $('#main').addEventListener('input',e=>{const t=e.target,ds=t.dataset;
   else if(/^q[abc]$/.test(f))r.s.q[f[1]]=+t.value||0;
   else if(/^m[abc]$/.test(f))r.s.m[f[1]]=t.value;
   touch(r);refreshStmt();return}
+ if(ds.lay){const s=E.get('settings')||{id:'settings',type:'settings',biz:{}};E.set('settings',s);s.lay=t.value==='one'?'one':'two';touch(s);refreshInv();return}
  if(ds.sf){const s=ensureSt(S.cid,S.ym);s[ds.sf]=t.value;touch(s);refreshInv();return}
  if(ds.x){const s=E.get(stId(S.cid,S.ym));if(!s)return;const[i,k]=ds.x.split(':');s.extra[i][k]=t.value;touch(s);refreshInv();return}
  if(ds.bz){const s=E.get('settings')||{id:'settings',type:'settings',biz:{}};E.set('settings',s);s.biz[ds.bz]=t.value;touch(s);return}
@@ -395,6 +458,7 @@ const A={
  invback(){flush().then(()=>go('stmt',{hl:''}))},
  addextra(){const s=ensureSt(S.cid,S.ym);(s.extra=s.extra||[]).push({n:'',q:1,u:0});touch(s);render()},
  delextra(ds){const s=E.get(stId(S.cid,S.ym));s.extra.splice(+ds.i,1);touch(s);render()},
+ pdf(){return invPdfAct(false)},pdfshare(){return invPdfAct(true)},
  print(){flush();const c=cname(S.cid);doPrint(invHTML(S.cid,S.ym),`거래명세서_${c}_${S.ym}`)},
  share(){const c=cname(S.cid),s=getSt(S.cid,S.ym),k=stCalc(s),pb=prevDue(S.cid,S.ym);
   const txt=`[${c}] ${ymLabel(S.ym)} 거래명세\n`+k.lines.map(l=>`${l.n} ${fmt(l.q)} x ${fmt(l.u)} = ${fmt(l.a)}`).join('\n')+`\n합계 ${fmt(k.total)}원${k.vat?` (부가세 ${fmt(k.vat)} 포함)`:''}${pb?`\n전월까지 미수금 ${fmt(pb)}원`:''}${getBiz().bank?'\n입금계좌 '+getBiz().bank:''}`;
